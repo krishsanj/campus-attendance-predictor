@@ -1,0 +1,198 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Attendance & Drop-Out Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="site-header">
+        <h1>Campus Student Risk Dashboard</h1>
+        <p>Monitor attendance and academic performance</p>
+    </header>
+
+    <main class="container">
+        <section class="summary-grid">
+            <div class="summary-card">
+                <h3>Total Students</h3>
+                <p>{{ total_students }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Low Risk</h3>
+                <p>{{ low_risk_count }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>Medium Risk</h3>
+                <p>{{ medium_risk_count }}</p>
+            </div>
+            <div class="summary-card">
+                <h3>High Risk</h3>
+                <p>{{ high_risk_count }}</p>
+            </div>
+        </section>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <section class="messages">
+                    {% for category, message in messages %}
+                        <p class="message {{ category }}">{{ message }}</p>
+                    {% endfor %}
+                </section>
+            {% endif %}
+        {% endwith %}
+
+        <section class="panel">
+            <h2>Add Student</h2>
+            <p class="help-text">
+                USN must be exactly 10 letters or numbers.
+                All scores must be between 0 and 100.
+            </p>
+
+            <form action="{{ url_for('add_student') }}"
+                  method="POST"
+                  class="student-form">
+
+                <label for="usn">USN</label>
+                <input
+                    type="text"
+                    id="usn"
+                    name="usn"
+                    minlength="10"
+                    maxlength="10"
+                    pattern="[A-Za-z0-9]{10}"
+                    title="Enter exactly 10 letters or numbers"
+                    placeholder="Example: 2AB23IS001"
+                    required>
+
+                <label for="name">Student Name</label>
+                <input
+                    type="text"
+                    id="name"
+                    name="name"
+                    maxlength="100"
+                    placeholder="Enter student name"
+                    required>
+
+                <label for="attendance">Attendance (%)</label>
+                <input
+                    type="number"
+                    id="attendance"
+                    name="attendance"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    placeholder="Example: 85"
+                    required>
+
+                <label for="internal_marks">Internal Marks (%)</label>
+                <input
+                    type="number"
+                    id="internal_marks"
+                    name="internal_marks"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    required>
+
+                <label for="assignment_completion">
+                    Assignment Completion (%)
+                </label>
+                <input
+                    type="number"
+                    id="assignment_completion"
+                    name="assignment_completion"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    required>
+
+                <label for="previous_performance">
+                    Previous Performance (%)
+                </label>
+                <input
+                    type="number"
+                    id="previous_performance"
+                    name="previous_performance"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    required>
+
+                <button type="submit" class="primary-button">
+                    Add Student
+                </button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <h2>Student Records</h2>
+
+            {% if students %}
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>USN (Primary Key)</th>
+                                <th>Name</th>
+                                <th>Attendance</th>
+                                <th>Marks</th>
+                                <th>Assignments</th>
+                                <th>Previous Performance</th>
+                                <th>Risk Level</th>
+                                <th>Model Estimate</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {% for student in students %}
+                                <tr>
+                                    <td>{{ student["usn"] }}</td>
+                                    <td>{{ student["name"] }}</td>
+                                    <td>{{ student["attendance"] }}%</td>
+                                    <td>{{ student["internal_marks"] }}%</td>
+                                    <td>{{ student["assignment_completion"] }}%</td>
+                                    <td>{{ student["previous_performance"] }}%</td>
+                                    <td>
+    <span class="risk
+        {% if student['risk'] == 'High Risk' %}
+            high
+        {% elif student['risk'] == 'Medium Risk' %}
+            medium
+        {% else %}
+            low
+        {% endif %}">
+        {{ student["risk"] }}
+    </span>
+</td>
+
+<td>{{ student["dropout_probability"] }}%</td>
+                                    <td>
+                                        <form
+                                            action="{{ url_for('delete_student', usn=student['usn']) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Delete this student record?');">
+                                            <button type="submit" class="delete-button">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p>No student records yet. Add a student using the form above.</p>
+            {% endif %}
+        </section>
+
+        <p class="disclaimer">
+            Risk categories are preliminary rule-based estimates, not a
+            verified prediction of whether a student will drop out.
+        </p>
+    </main>
+</body>
+</html>
